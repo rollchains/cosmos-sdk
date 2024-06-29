@@ -46,24 +46,37 @@ type Context struct {
 	// Deprecated: Use HeaderService for hash
 	headerHash []byte
 	// Deprecated: Use HeaderService for chainID and CometService for the rest
-	chainID              string
-	txBytes              []byte
-	logger               log.Logger
-	voteInfo             []abci.VoteInfo
-	gasMeter             storetypes.GasMeter
-	blockGasMeter        storetypes.GasMeter
-	checkTx              bool
-	recheckTx            bool // if recheckTx == true, then checkTx must also be true
-	execMode             ExecMode
-	minGasPrice          DecCoins
-	consParams           cmtproto.ConsensusParams
-	eventManager         EventManagerI
+	chainID       string
+	txBytes       []byte
+	logger        log.Logger
+	voteInfo      []abci.VoteInfo
+	gasMeter      storetypes.GasMeter
+	blockGasMeter storetypes.GasMeter
+	checkTx       bool
+	recheckTx     bool // if recheckTx == true, then checkTx must also be true
+	execMode      ExecMode
+	minGasPrice   DecCoins
+	consParams    cmtproto.ConsensusParams
+	eventManager  EventManagerI
+
 	priority             int64 // The tx priority, only relevant in CheckTx
 	kvGasConfig          storetypes.GasConfig
 	transientKVGasConfig storetypes.GasConfig
 	streamingManager     storetypes.StreamingManager
 	cometInfo            comet.BlockInfo
 	headerInfo           header.Info
+
+	// EVM properties
+	evmEventManager  *EVMEventManager
+	evm              bool   // EVM transaction flag
+	evmNonce         uint64 // EVM Transaction nonce
+	evmSenderAddress string // EVM Sender address
+	evmTxHash        string // EVM TX hash
+	evmVmError       string // EVM VM error during execution
+}
+
+func (c Context) EVMEventManager() *EVMEventManager {
+	return c.evmEventManager
 }
 
 // Proposed rename, not done to avoid API breakage
@@ -135,6 +148,7 @@ func NewContext(ms storetypes.MultiStore, header cmtproto.Header, isCheckTx bool
 		gasMeter:             storetypes.NewInfiniteGasMeter(),
 		minGasPrice:          DecCoins{},
 		eventManager:         NewEventManager(),
+		evmEventManager:      NewEVMEventManager(),
 		kvGasConfig:          storetypes.KVGasConfig(),
 		transientKVGasConfig: storetypes.TransientGasConfig(),
 	}
@@ -281,6 +295,36 @@ func (c Context) WithConsensusParams(params cmtproto.ConsensusParams) Context {
 // WithEventManager returns a Context with an updated event manager
 func (c Context) WithEventManager(em EventManagerI) Context {
 	c.eventManager = em
+	return c
+}
+
+func (c Context) WithEvmEventManager(em *EVMEventManager) Context {
+	c.evmEventManager = em
+	return c
+}
+
+func (c Context) WithEVMSenderAddress(address string) Context {
+	c.evmSenderAddress = address
+	return c
+}
+
+func (c Context) WithEVMNonce(nonce uint64) Context {
+	c.evmNonce = nonce
+	return c
+}
+
+func (c Context) WithIsEVM(isEVM bool) Context {
+	c.evm = isEVM
+	return c
+}
+
+func (c Context) WithEVMTxHash(txHash string) Context {
+	c.evmTxHash = txHash
+	return c
+}
+
+func (c Context) WithEVMVMError(vmError string) Context {
+	c.evmVmError = vmError
 	return c
 }
 

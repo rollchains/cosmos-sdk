@@ -140,6 +140,12 @@ var (
 	// supplied.
 	ErrInvalidGasLimit = errorsmod.Register(RootCodespace, 41, "invalid gas limit")
 
+	// ErrUnsupportedTxType defines an error for an unsupported transaction type (e.g., EIP-4844 transactions)
+	ErrUnsupportedTxType = errorsmod.Register(RootCodespace, 42, "unsupported transaction type")
+
+	// ErrEVMVMError defines an error for an evm vm error (eg. revert)
+	ErrEVMVMError = errorsmod.Register(RootCodespace, 43, "evm reverted")
+
 	// ErrPanic should only be set when we recovering from a panic
 	ErrPanic = errorsmod.ErrPanic
 )
