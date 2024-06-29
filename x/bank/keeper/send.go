@@ -152,7 +152,7 @@ func (k BaseSendKeeper) InputOutputCoins(ctx context.Context, input types.Input,
 		return err
 	}
 
-	err = k.subUnlockedCoins(ctx, inAddress, input.Coins)
+	err = k.SubUnlockedCoins(ctx, inAddress, input.Coins)
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func (k BaseSendKeeper) InputOutputCoins(ctx context.Context, input types.Input,
 // An error is returned upon failure.
 func (k BaseSendKeeper) SendCoins(ctx context.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error {
 	var err error
-	err = k.subUnlockedCoins(ctx, fromAddr, amt)
+	err = k.SubUnlockedCoins(ctx, fromAddr, amt)
 	if err != nil {
 		return err
 	}
@@ -251,10 +251,10 @@ func (k BaseSendKeeper) SendCoins(ctx context.Context, fromAddr, toAddr sdk.AccA
 	return nil
 }
 
-// subUnlockedCoins removes the unlocked amt coins of the given account. An error is
+// SubUnlockedCoins removes the unlocked amt coins of the given account. An error is
 // returned if the resulting balance is negative or the initial amount is invalid.
 // A coin_spent event is emitted after.
-func (k BaseSendKeeper) subUnlockedCoins(ctx context.Context, addr sdk.AccAddress, amt sdk.Coins) error {
+func (k BaseSendKeeper) SubUnlockedCoins(ctx context.Context, addr sdk.AccAddress, amt sdk.Coins) error {
 	if !amt.IsValid() {
 		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
 	}
