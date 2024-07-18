@@ -40,6 +40,11 @@ type debuggingGasMeter struct {
 	g storetypes.GasMeter
 }
 
+// Multiplier implements types.GasMeter.
+func (d *debuggingGasMeter) Multiplier() (numerator uint64, denominator uint64) {
+	return 1, 1
+}
+
 func (d debuggingGasMeter) GasConsumed() storetypes.Gas {
 	return d.g.GasConsumed()
 }
