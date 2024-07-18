@@ -73,6 +73,7 @@ type Context struct {
 	evmSenderAddress string // EVM Sender address
 	evmTxHash        string // EVM TX hash
 	evmVmError       string // EVM VM error during execution
+	txIndex          int    // The index of the transaction being processed (may not be required due to no multi-processing)
 
 	pendingTxChecker abci.PendingTxChecker // Checker for pending transaction, only relevant in CheckTx
 	checkTxCallback  func(Context, error)  // callback to make at the end of CheckTx. Input param is the error (nil-able) of `runMsgs`
@@ -307,6 +308,10 @@ func (c Context) WithEvmEventManager(em *EVMEventManager) Context {
 	return c
 }
 
+func (c Context) TxIndex() int {
+	return c.txIndex
+}
+
 func (c Context) WithEVMSenderAddress(address string) Context {
 	c.evmSenderAddress = address
 	return c
@@ -329,6 +334,12 @@ func (c Context) WithEVMTxHash(txHash string) Context {
 
 func (c Context) WithEVMVMError(vmError string) Context {
 	c.evmVmError = vmError
+	return c
+}
+
+// WithTxIndex returns a Context with the current transaction index that's being processed
+func (c Context) WithTxIndex(txIndex int) Context {
+	c.txIndex = txIndex
 	return c
 }
 
