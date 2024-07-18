@@ -406,3 +406,7 @@ func (store *Store) setCacheValue(key, value []byte, dirty bool) {
 		store.unsortedCache[keyStr] = struct{}{}
 	}
 }
+
+func (store *Store) GetParent() types.KVStore {
+	return store.parent
+}

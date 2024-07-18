@@ -32,6 +32,10 @@ type ViewKeeper interface {
 	SpendableCoins(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 	SpendableCoin(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
 
+	// EVM
+	GetWeiBalance(ctx sdk.Context, addr sdk.AccAddress) math.Int
+	IterateAllWeiBalances(ctx sdk.Context, cb func(sdk.AccAddress, math.Int) bool)
+
 	IterateAccountBalances(ctx context.Context, addr sdk.AccAddress, cb func(coin sdk.Coin) (stop bool))
 	IterateAllBalances(ctx context.Context, cb func(address sdk.AccAddress, coin sdk.Coin) (stop bool))
 }
@@ -66,6 +70,7 @@ type BaseViewKeeper struct {
 	DenomMetadata collections.Map[string, types.Metadata]
 	SendEnabled   collections.Map[string, bool]
 	Balances      *collections.IndexedMap[collections.Pair[sdk.AccAddress, string], math.Int, BalancesIndexes]
+	WeiBalances   collections.Map[sdk.AccAddress, math.Int]
 	Params        collections.Item[types.Params]
 }
 
@@ -81,6 +86,7 @@ func NewBaseViewKeeper(cdc codec.BinaryCodec, storeService store.KVStoreService,
 		DenomMetadata: collections.NewMap(sb, types.DenomMetadataPrefix, "denom_metadata", collections.StringKey, codec.CollValue[types.Metadata](cdc)),
 		SendEnabled:   collections.NewMap(sb, types.SendEnabledPrefix, "send_enabled", collections.StringKey, codec.BoolValue), // NOTE: we use a bool value which uses protobuf to retain state backwards compat
 		Balances:      collections.NewIndexedMap(sb, types.BalancesPrefix, "balances", collections.PairKeyCodec(sdk.AccAddressKey, collections.StringKey), types.BalanceValueCodec, newBalancesIndexes(sb)),
+		WeiBalances:   collections.NewMap(sb, types.WeiBalancesPrefix, "wei_balances", sdk.AccAddressKey, sdk.IntValue),
 		Params:        collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 	}
 
@@ -249,4 +255,24 @@ func (k BaseViewKeeper) ValidateBalance(ctx context.Context, addr sdk.AccAddress
 	}
 
 	return nil
+}
+
+// EVM
+func (k BaseViewKeeper) GetWeiBalance(ctx sdk.Context, addr sdk.AccAddress) math.Int {
+	v, err := k.WeiBalances.Get(ctx, addr)
+	if err != nil {
+		return math.ZeroInt()
+	}
+
+	return v
+}
+
+func (k BaseViewKeeper) IterateAllWeiBalances(ctx sdk.Context, cb func(sdk.AccAddress, math.Int) bool) {
+	err := k.WeiBalances.Walk(ctx, nil, func(key sdk.AccAddress, value math.Int) (stop bool, err error) {
+		return cb(key, value), nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
 }

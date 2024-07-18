@@ -49,6 +49,8 @@ type Keeper interface {
 	DelegateCoins(ctx context.Context, delegatorAddr, moduleAccAddr sdk.AccAddress, amt sdk.Coins) error
 	UndelegateCoins(ctx context.Context, moduleAccAddr, delegatorAddr sdk.AccAddress, amt sdk.Coins) error
 
+	SetSupply(ctx context.Context, coin sdk.Coin)
+
 	types.QueryServer
 }
 
@@ -157,7 +159,7 @@ func (k BaseKeeper) DelegateCoins(ctx context.Context, delegatorAddr, moduleAccA
 		types.NewCoinSpentEvent(delegatorAddr, amt),
 	)
 
-	err := k.addCoins(ctx, moduleAccAddr, amt)
+	err := k.AddCoins(ctx, moduleAccAddr, amt)
 	if err != nil {
 		return err
 	}
@@ -180,7 +182,7 @@ func (k BaseKeeper) UndelegateCoins(ctx context.Context, moduleAccAddr, delegato
 		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
 	}
 
-	err := k.subUnlockedCoins(ctx, moduleAccAddr, amt)
+	err := k.SubUnlockedCoins(ctx, moduleAccAddr, amt)
 	if err != nil {
 		return err
 	}
@@ -189,7 +191,7 @@ func (k BaseKeeper) UndelegateCoins(ctx context.Context, moduleAccAddr, delegato
 		return errorsmod.Wrap(err, "failed to track undelegation")
 	}
 
-	err = k.addCoins(ctx, delegatorAddr, amt)
+	err = k.AddCoins(ctx, delegatorAddr, amt)
 	if err != nil {
 		return err
 	}
@@ -357,7 +359,7 @@ func (k BaseKeeper) MintCoins(ctx context.Context, moduleName string, amounts sd
 		panic(errorsmod.Wrapf(sdkerrors.ErrUnauthorized, "module account %s does not have permissions to mint tokens", moduleName))
 	}
 
-	err = k.addCoins(ctx, acc.GetAddress(), amounts)
+	err = k.AddCoins(ctx, acc.GetAddress(), amounts)
 	if err != nil {
 		return err
 	}
@@ -365,7 +367,7 @@ func (k BaseKeeper) MintCoins(ctx context.Context, moduleName string, amounts sd
 	for _, amount := range amounts {
 		supply := k.GetSupply(ctx, amount.GetDenom())
 		supply = supply.Add(amount)
-		k.setSupply(ctx, supply)
+		k.SetSupply(ctx, supply)
 	}
 
 	k.logger.Debug("minted coins from module account", "amount", amounts.String(), "from", moduleName)
@@ -390,7 +392,7 @@ func (k BaseKeeper) BurnCoins(ctx context.Context, moduleName string, amounts sd
 		panic(errorsmod.Wrapf(sdkerrors.ErrUnauthorized, "module account %s does not have permissions to burn tokens", moduleName))
 	}
 
-	err := k.subUnlockedCoins(ctx, acc.GetAddress(), amounts)
+	err := k.SubUnlockedCoins(ctx, acc.GetAddress(), amounts)
 	if err != nil {
 		return err
 	}
@@ -398,7 +400,7 @@ func (k BaseKeeper) BurnCoins(ctx context.Context, moduleName string, amounts sd
 	for _, amount := range amounts {
 		supply := k.GetSupply(ctx, amount.GetDenom())
 		supply = supply.Sub(amount)
-		k.setSupply(ctx, supply)
+		k.SetSupply(ctx, supply)
 	}
 
 	k.logger.Debug("burned tokens from module account", "amount", amounts.String(), "from", moduleName)
@@ -412,8 +414,8 @@ func (k BaseKeeper) BurnCoins(ctx context.Context, moduleName string, amounts sd
 	return nil
 }
 
-// setSupply sets the supply for the given coin
-func (k BaseKeeper) setSupply(ctx context.Context, coin sdk.Coin) {
+// SetSupply sets the supply for the given coin
+func (k BaseKeeper) SetSupply(ctx context.Context, coin sdk.Coin) {
 	// Bank invariants and IBC requires to remove zero coins.
 	if coin.IsZero() {
 		_ = k.Supply.Remove(ctx, coin.Denom)

@@ -48,19 +48,22 @@ type GasMeter interface {
 	IsPastLimit() bool
 	IsOutOfGas() bool
 	String() string
+	Multiplier() (numerator uint64, denominator uint64) // EVM
 }
 
 type basicGasMeter struct {
 	limit    Gas
 	consumed Gas
+	// lock     *sync.Mutex // TODO: for evm? or is this a sei parallel thing?
 }
 
 // NewGasMeter returns a reference to a new basicGasMeter.
 func NewGasMeter(limit Gas) GasMeter {
-	return &basicGasMeter{
-		limit:    limit,
-		consumed: 0,
-	}
+	return NewMultiplierGasMeter(limit, 1, 1)
+}
+
+func (g *basicGasMeter) Multiplier() (numerator uint64, denominator uint64) {
+	return 1, 1
 }
 
 // GasConsumed returns the gas consumed from the GasMeter.
@@ -155,6 +158,11 @@ func NewInfiniteGasMeter() GasMeter {
 	return &infiniteGasMeter{
 		consumed: 0,
 	}
+}
+
+// Multiplier implements GasMeter.
+func (g *infiniteGasMeter) Multiplier() (numerator uint64, denominator uint64) {
+	return 1, 1
 }
 
 // GasConsumed returns the gas consumed from the GasMeter.
