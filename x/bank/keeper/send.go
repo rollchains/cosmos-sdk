@@ -52,6 +52,7 @@ type SendKeeper interface {
 	SubWei(ctx sdk.Context, addr sdk.AccAddress, amt math.Int) error
 	AddWei(ctx sdk.Context, addr sdk.AccAddress, amt math.Int) error
 	AddCoins(ctx context.Context, addr sdk.AccAddress, amt sdk.Coins) error
+	SubUnlockedCoins(ctx context.Context, addr sdk.AccAddress, amt sdk.Coins) error
 
 	GetAuthority() string
 }
