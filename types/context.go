@@ -73,6 +73,10 @@ type Context struct {
 	evmSenderAddress string // EVM Sender address
 	evmTxHash        string // EVM TX hash
 	evmVmError       string // EVM VM error during execution
+
+	pendingTxChecker abci.PendingTxChecker // Checker for pending transaction, only relevant in CheckTx
+	checkTxCallback  func(Context, error)  // callback to make at the end of CheckTx. Input param is the error (nil-able) of `runMsgs`
+	expireTxHandler  func()                // callback that the mempool invokes when a tx is expired
 }
 
 func (c Context) EVMEventManager() *EVMEventManager {
@@ -325,6 +329,21 @@ func (c Context) WithEVMTxHash(txHash string) Context {
 
 func (c Context) WithEVMVMError(vmError string) Context {
 	c.evmVmError = vmError
+	return c
+}
+
+func (c Context) WithPendingTxChecker(checker abci.PendingTxChecker) Context {
+	c.pendingTxChecker = checker
+	return c
+}
+
+func (c Context) WithCheckTxCallback(checkTxCallback func(Context, error)) Context {
+	c.checkTxCallback = checkTxCallback
+	return c
+}
+
+func (c Context) WithExpireTxHandler(expireTxHandler func()) Context {
+	c.expireTxHandler = expireTxHandler
 	return c
 }
 

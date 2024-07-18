@@ -2,6 +2,9 @@ go 1.21
 
 module github.com/cosmos/cosmos-sdk
 
+// reece/evm-v50s
+replace github.com/cometbft/cometbft => /home/reece/Desktop/Programming/Go/cometbft
+
 require (
 	cosmossdk.io/api v0.7.5
 	cosmossdk.io/collections v0.4.0
@@ -116,6 +119,7 @@ require (
 	github.com/hashicorp/go-hclog v1.5.0 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/hashicorp/go-plugin v1.5.2 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/holiman/uint256 v1.2.3 // indirect
@@ -126,7 +130,6 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.10.7 // indirect
-	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/linxGnu/grocksdb v1.8.14 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
