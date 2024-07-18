@@ -107,6 +107,9 @@ message Result {
   //
   // Since: cosmos-sdk 0.46
   repeated google.protobuf.Any msg_responses = 4;
+
+  // EVM VM error during execution
+  string evm_error = 5;
 }
 
 // SimulationResponse defines the response generated when a transaction is
