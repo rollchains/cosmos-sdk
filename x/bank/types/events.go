@@ -1,6 +1,7 @@
 package types
 
 import (
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -21,6 +22,11 @@ const (
 	AttributeKeyReceiver = "receiver"
 	AttributeKeyMinter   = "minter"
 	AttributeKeyBurner   = "burner"
+
+	// EVM
+	EventTypeWeiSpent    = "wei_spent"
+	EventTypeWeiReceived = "wei_received"
+	EventTypeWeiTransfer = "wei_transfer"
 )
 
 // NewCoinSpentEvent constructs a new coin spent sdk.Event
@@ -55,6 +61,24 @@ func NewCoinBurnEvent(burner sdk.AccAddress, amount sdk.Coins) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeCoinBurn,
 		sdk.NewAttribute(AttributeKeyBurner, burner.String()),
+		sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
+	)
+}
+
+// NewWeiSpentEvent constructs a new wei spent sdk.Event
+func NewWeiSpentEvent(spender sdk.AccAddress, amount math.Int) sdk.Event {
+	return sdk.NewEvent(
+		EventTypeWeiSpent,
+		sdk.NewAttribute(AttributeKeySpender, spender.String()),
+		sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
+	)
+}
+
+// NewWeiReceivedEvent constructs a new wei received sdk.Event
+func NewWeiReceivedEvent(receiver sdk.AccAddress, amount math.Int) sdk.Event {
+	return sdk.NewEvent(
+		EventTypeWeiReceived,
+		sdk.NewAttribute(AttributeKeyReceiver, receiver.String()),
 		sdk.NewAttribute(sdk.AttributeKeyAmount, amount.String()),
 	)
 }

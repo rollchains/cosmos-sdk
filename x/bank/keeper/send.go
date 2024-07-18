@@ -46,10 +46,20 @@ type SendKeeper interface {
 	BlockedAddr(addr sdk.AccAddress) bool
 	GetBlockedAddresses() map[string]bool
 
+	// EVM
+	SendCoinsWithoutAccCreation(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error
+	SendCoinsAndWei(ctx sdk.Context, from sdk.AccAddress, to sdk.AccAddress, amt math.Int, wei math.Int) error
+	SubWei(ctx sdk.Context, addr sdk.AccAddress, amt math.Int) error
+	AddWei(ctx sdk.Context, addr sdk.AccAddress, amt math.Int) error
+	AddCoins(ctx context.Context, addr sdk.AccAddress, amt sdk.Coins) error
+
 	GetAuthority() string
 }
 
-var _ SendKeeper = (*BaseSendKeeper)(nil)
+var (
+	_            SendKeeper = (*BaseSendKeeper)(nil)
+	OneUseiInWei math.Int   = math.NewInt(1_000_000_000_000)
+)
 
 // BaseSendKeeper only allows transfers between accounts without the possibility of
 // creating coins. It implements the SendKeeper interface.
@@ -177,7 +187,7 @@ func (k BaseSendKeeper) InputOutputCoins(ctx context.Context, input types.Input,
 			return err
 		}
 
-		if err := k.addCoins(ctx, outAddress, out.Coins); err != nil {
+		if err := k.AddCoins(ctx, outAddress, out.Coins); err != nil {
 			return err
 		}
 
@@ -206,6 +216,7 @@ func (k BaseSendKeeper) InputOutputCoins(ctx context.Context, input types.Input,
 // SendCoins transfers amt coins from a sending account to a receiving account.
 // An error is returned upon failure.
 func (k BaseSendKeeper) SendCoins(ctx context.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error {
+
 	var err error
 	err = k.SubUnlockedCoins(ctx, fromAddr, amt)
 	if err != nil {
@@ -217,7 +228,7 @@ func (k BaseSendKeeper) SendCoins(ctx context.Context, fromAddr, toAddr sdk.AccA
 		return err
 	}
 
-	err = k.addCoins(ctx, toAddr, amt)
+	err = k.AddCoins(ctx, toAddr, amt)
 	if err != nil {
 		return err
 	}
@@ -297,9 +308,9 @@ func (k BaseSendKeeper) SubUnlockedCoins(ctx context.Context, addr sdk.AccAddres
 	return nil
 }
 
-// addCoins increase the addr balance by the given amt. Fails if the provided
+// AddCoins increase the addr balance by the given amt. Fails if the provided
 // amt is invalid. It emits a coin received event.
-func (k BaseSendKeeper) addCoins(ctx context.Context, addr sdk.AccAddress, amt sdk.Coins) error {
+func (k BaseSendKeeper) AddCoins(ctx context.Context, addr sdk.AccAddress, amt sdk.Coins) error {
 	if !amt.IsValid() {
 		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
 	}
@@ -504,4 +515,134 @@ func (r *sendRestriction) apply(ctx context.Context, fromAddr, toAddr sdk.AccAdd
 		return toAddr, nil
 	}
 	return r.fn(ctx, fromAddr, toAddr, amt)
+}
+
+// EVM
+
+func (k BaseSendKeeper) SubWei(ctx sdk.Context, addr sdk.AccAddress, amt math.Int) (err error) {
+	if amt.Equal(math.ZeroInt()) {
+		return nil
+	}
+	defer func() {
+		if err == nil {
+			ctx.EventManager().EmitEvent(
+				types.NewWeiSpentEvent(addr, amt),
+			)
+		}
+	}()
+	currentWeiBalance := k.GetWeiBalance(ctx, addr)
+	if amt.LTE(currentWeiBalance) {
+		// no need to change usei balance
+		return k.setWeiBalance(ctx, addr, currentWeiBalance.Sub(amt))
+	}
+	currentUseiBalance := k.GetBalance(ctx, addr, sdk.MustGetBaseDenom()).Amount
+	currentAggregatedBalance := currentUseiBalance.Mul(OneUseiInWei).Add(currentWeiBalance)
+	postAggregatedbalance := currentAggregatedBalance.Sub(amt)
+	if postAggregatedbalance.IsNegative() {
+		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%swei is smaller than %swei", currentAggregatedBalance, amt)
+	}
+	useiBalance, weiBalance := SplitUseiWeiAmount(postAggregatedbalance)
+	if err := k.setBalance(ctx, addr, sdk.NewCoin(sdk.MustGetBaseDenom(), useiBalance)); err != nil {
+		return err
+	}
+	return k.setWeiBalance(ctx, addr, weiBalance)
+}
+
+func (k BaseSendKeeper) AddWei(ctx sdk.Context, addr sdk.AccAddress, amt math.Int) (err error) {
+	if amt.Equal(math.ZeroInt()) {
+		return nil
+	}
+	defer func() {
+		if err == nil {
+			ctx.EventManager().EmitEvent(
+				types.NewWeiReceivedEvent(addr, amt),
+			)
+		}
+	}()
+	currentWeiBalance := k.GetWeiBalance(ctx, addr)
+	postWeiBalance := currentWeiBalance.Add(amt)
+	if postWeiBalance.LT(OneUseiInWei) {
+		// no need to change usei balance
+		return k.setWeiBalance(ctx, addr, postWeiBalance)
+	}
+	currentUseiBalance := k.GetBalance(ctx, addr, sdk.MustGetBaseDenom()).Amount
+	useiCredit, weiBalance := SplitUseiWeiAmount(postWeiBalance)
+	if err := k.setBalance(ctx, addr, sdk.NewCoin(sdk.MustGetBaseDenom(), currentUseiBalance.Add(useiCredit))); err != nil {
+		return err
+	}
+	return k.setWeiBalance(ctx, addr, weiBalance)
+}
+
+func (k BaseSendKeeper) SendCoinsAndWei(ctx sdk.Context, from sdk.AccAddress, to sdk.AccAddress, amt math.Int, wei math.Int) error {
+	if err := k.SubWei(ctx, from, wei); err != nil {
+		return err
+	}
+	if err := k.AddWei(ctx, to, wei); err != nil {
+		return err
+	}
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.EventTypeWeiTransfer,
+			sdk.NewAttribute(types.AttributeKeyRecipient, to.String()),
+			sdk.NewAttribute(types.AttributeKeySender, from.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, wei.String()),
+		),
+	})
+	if amt.GT(math.ZeroInt()) {
+		return k.SendCoinsWithoutAccCreation(ctx, from, to, sdk.NewCoins(sdk.NewCoin(sdk.MustGetBaseDenom(), amt)))
+	}
+	return nil
+}
+
+func SplitUseiWeiAmount(amt math.Int) (math.Int, math.Int) {
+	return amt.Quo(OneUseiInWei), amt.Mod(OneUseiInWei)
+}
+
+func (k BaseSendKeeper) SendCoinsWithoutAccCreation(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
+	return k.sendCoinsWithoutAccCreation(ctx, fromAddr, toAddr, amt)
+}
+
+// EVM Helpers
+func (k BaseSendKeeper) sendCoinsWithoutAccCreation(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
+	if !amt.IsValid() {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidCoins, "invalid coin amount: %s", amt)
+	}
+
+	err := k.SubUnlockedCoins(ctx, fromAddr, amt)
+	if err != nil {
+		return err
+	}
+
+	err = k.AddCoins(ctx, toAddr, amt)
+	if err != nil {
+		return err
+	}
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.EventTypeTransfer,
+			sdk.NewAttribute(types.AttributeKeyRecipient, toAddr.String()),
+			sdk.NewAttribute(types.AttributeKeySender, fromAddr.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, amt.String()),
+		),
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(types.AttributeKeySender, fromAddr.String()),
+		),
+	})
+
+	return nil
+}
+
+func (k BaseSendKeeper) setWeiBalance(ctx sdk.Context, addr sdk.AccAddress, amt math.Int) error {
+	if amt.IsZero() {
+		return k.WeiBalances.Remove(ctx, addr)
+	}
+
+	// todo: this may not be required, but ensures we don't accidentally shoot ourselves in the foot
+	if amt.IsNegative() {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidCoins, "set invalid coin amount: %s", amt)
+	}
+
+	return k.WeiBalances.Set(ctx, addr, amt)
 }
