@@ -2,8 +2,11 @@ go 1.21
 
 module github.com/cosmos/cosmos-sdk
 
-// reece/evm-v50s
-replace github.com/cometbft/cometbft => /home/reece/Desktop/Programming/Go/cometbft
+replace (
+	cosmossdk.io/store => ./store
+	// reece/evm-v50s
+	github.com/cometbft/cometbft => /home/reece/Desktop/Programming/Go/cometbft
+)
 
 require (
 	cosmossdk.io/api v0.7.5

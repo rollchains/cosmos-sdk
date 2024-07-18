@@ -144,6 +144,34 @@ func (m *MockBankKeeper) EXPECT() *MockBankKeeperMockRecorder {
 	return m.recorder
 }
 
+// AddCoins mocks base method.
+func (m *MockBankKeeper) AddCoins(ctx context.Context, addr types.AccAddress, amt types.Coins) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddCoins", ctx, addr, amt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddCoins indicates an expected call of AddCoins.
+func (mr *MockBankKeeperMockRecorder) AddCoins(ctx, addr, amt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCoins", reflect.TypeOf((*MockBankKeeper)(nil).AddCoins), ctx, addr, amt)
+}
+
+// AddWei mocks base method.
+func (m *MockBankKeeper) AddWei(ctx types.Context, addr types.AccAddress, amt math.Int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddWei", ctx, addr, amt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddWei indicates an expected call of AddWei.
+func (mr *MockBankKeeperMockRecorder) AddWei(ctx, addr, amt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddWei", reflect.TypeOf((*MockBankKeeper)(nil).AddWei), ctx, addr, amt)
+}
+
 // AllBalances mocks base method.
 func (m *MockBankKeeper) AllBalances(arg0 context.Context, arg1 *types0.QueryAllBalancesRequest) (*types0.QueryAllBalancesResponse, error) {
 	m.ctrl.T.Helper()
@@ -532,6 +560,20 @@ func (mr *MockBankKeeperMockRecorder) GetSupply(ctx, denom interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupply", reflect.TypeOf((*MockBankKeeper)(nil).GetSupply), ctx, denom)
 }
 
+// GetWeiBalance mocks base method.
+func (m *MockBankKeeper) GetWeiBalance(ctx types.Context, addr types.AccAddress) math.Int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWeiBalance", ctx, addr)
+	ret0, _ := ret[0].(math.Int)
+	return ret0
+}
+
+// GetWeiBalance indicates an expected call of GetWeiBalance.
+func (mr *MockBankKeeperMockRecorder) GetWeiBalance(ctx, addr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWeiBalance", reflect.TypeOf((*MockBankKeeper)(nil).GetWeiBalance), ctx, addr)
+}
+
 // HasBalance mocks base method.
 func (m *MockBankKeeper) HasBalance(ctx context.Context, addr types.AccAddress, amt types.Coin) bool {
 	m.ctrl.T.Helper()
@@ -683,6 +725,18 @@ func (mr *MockBankKeeperMockRecorder) IterateAllDenomMetaData(ctx, cb interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateAllDenomMetaData", reflect.TypeOf((*MockBankKeeper)(nil).IterateAllDenomMetaData), ctx, cb)
 }
 
+// IterateAllWeiBalances mocks base method.
+func (m *MockBankKeeper) IterateAllWeiBalances(ctx types.Context, cb func(types.AccAddress, math.Int) bool) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IterateAllWeiBalances", ctx, cb)
+}
+
+// IterateAllWeiBalances indicates an expected call of IterateAllWeiBalances.
+func (mr *MockBankKeeperMockRecorder) IterateAllWeiBalances(ctx, cb interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateAllWeiBalances", reflect.TypeOf((*MockBankKeeper)(nil).IterateAllWeiBalances), ctx, cb)
+}
+
 // IterateSendEnabledEntries mocks base method.
 func (m *MockBankKeeper) IterateSendEnabledEntries(ctx context.Context, cb func(string, bool) bool) {
 	m.ctrl.T.Helper()
@@ -776,6 +830,20 @@ func (mr *MockBankKeeperMockRecorder) SendCoins(ctx, fromAddr, toAddr, amt inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoins", reflect.TypeOf((*MockBankKeeper)(nil).SendCoins), ctx, fromAddr, toAddr, amt)
 }
 
+// SendCoinsAndWei mocks base method.
+func (m *MockBankKeeper) SendCoinsAndWei(ctx types.Context, from, to types.AccAddress, amt, wei math.Int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendCoinsAndWei", ctx, from, to, amt, wei)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendCoinsAndWei indicates an expected call of SendCoinsAndWei.
+func (mr *MockBankKeeperMockRecorder) SendCoinsAndWei(ctx, from, to, amt, wei interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoinsAndWei", reflect.TypeOf((*MockBankKeeper)(nil).SendCoinsAndWei), ctx, from, to, amt, wei)
+}
+
 // SendCoinsFromAccountToModule mocks base method.
 func (m *MockBankKeeper) SendCoinsFromAccountToModule(ctx context.Context, senderAddr types.AccAddress, recipientModule string, amt types.Coins) error {
 	m.ctrl.T.Helper()
@@ -816,6 +884,20 @@ func (m *MockBankKeeper) SendCoinsFromModuleToModule(ctx context.Context, sender
 func (mr *MockBankKeeperMockRecorder) SendCoinsFromModuleToModule(ctx, senderModule, recipientModule, amt interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoinsFromModuleToModule", reflect.TypeOf((*MockBankKeeper)(nil).SendCoinsFromModuleToModule), ctx, senderModule, recipientModule, amt)
+}
+
+// SendCoinsWithoutAccCreation mocks base method.
+func (m *MockBankKeeper) SendCoinsWithoutAccCreation(ctx types.Context, fromAddr, toAddr types.AccAddress, amt types.Coins) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendCoinsWithoutAccCreation", ctx, fromAddr, toAddr, amt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendCoinsWithoutAccCreation indicates an expected call of SendCoinsWithoutAccCreation.
+func (mr *MockBankKeeperMockRecorder) SendCoinsWithoutAccCreation(ctx, fromAddr, toAddr, amt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoinsWithoutAccCreation", reflect.TypeOf((*MockBankKeeper)(nil).SendCoinsWithoutAccCreation), ctx, fromAddr, toAddr, amt)
 }
 
 // SendEnabled mocks base method.
@@ -883,6 +965,18 @@ func (mr *MockBankKeeperMockRecorder) SetSendEnabled(ctx, denom, value interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSendEnabled", reflect.TypeOf((*MockBankKeeper)(nil).SetSendEnabled), ctx, denom, value)
 }
 
+// SetSupply mocks base method.
+func (m *MockBankKeeper) SetSupply(ctx context.Context, coin types.Coin) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetSupply", ctx, coin)
+}
+
+// SetSupply indicates an expected call of SetSupply.
+func (mr *MockBankKeeperMockRecorder) SetSupply(ctx, coin interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSupply", reflect.TypeOf((*MockBankKeeper)(nil).SetSupply), ctx, coin)
+}
+
 // SpendableBalanceByDenom mocks base method.
 func (m *MockBankKeeper) SpendableBalanceByDenom(arg0 context.Context, arg1 *types0.QuerySpendableBalanceByDenomRequest) (*types0.QuerySpendableBalanceByDenomResponse, error) {
 	m.ctrl.T.Helper()
@@ -939,6 +1033,34 @@ func (m *MockBankKeeper) SpendableCoins(ctx context.Context, addr types.AccAddre
 func (mr *MockBankKeeperMockRecorder) SpendableCoins(ctx, addr interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpendableCoins", reflect.TypeOf((*MockBankKeeper)(nil).SpendableCoins), ctx, addr)
+}
+
+// SubUnlockedCoins mocks base method.
+func (m *MockBankKeeper) SubUnlockedCoins(ctx context.Context, addr types.AccAddress, amt types.Coins) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubUnlockedCoins", ctx, addr, amt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubUnlockedCoins indicates an expected call of SubUnlockedCoins.
+func (mr *MockBankKeeperMockRecorder) SubUnlockedCoins(ctx, addr, amt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubUnlockedCoins", reflect.TypeOf((*MockBankKeeper)(nil).SubUnlockedCoins), ctx, addr, amt)
+}
+
+// SubWei mocks base method.
+func (m *MockBankKeeper) SubWei(ctx types.Context, addr types.AccAddress, amt math.Int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubWei", ctx, addr, amt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubWei indicates an expected call of SubWei.
+func (mr *MockBankKeeperMockRecorder) SubWei(ctx, addr, amt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubWei", reflect.TypeOf((*MockBankKeeper)(nil).SubWei), ctx, addr, amt)
 }
 
 // SupplyOf mocks base method.
